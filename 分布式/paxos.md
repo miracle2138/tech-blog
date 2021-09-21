@@ -24,3 +24,6 @@
 整个协议略微晦涩。关键点：
 - prepare阶段本质上是一种抢占式锁机制，proposer想要提案，必须拿到acceptor的锁，后续有持更大epoch的proposer可以抢占锁，抢占后acceptor将拒绝为之前的proposer响应
 - accept阶段决定值遵循一个原则，即后来者遵循之前的提议。如果acceptor已经接受过提案值了，那么后续的提案应该遵守这个值，如果完全没有提案过，则按照proposer的提案值来
+
+### 参考
+[0](https://zhuanlan.zhihu.com/p/29706905)
