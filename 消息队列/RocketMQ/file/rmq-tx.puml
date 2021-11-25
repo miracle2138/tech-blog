@@ -7,7 +7,7 @@ Producer -> Producer: 执行本地事务
 Producer -> Broker: commit/rollback 确认消息
 
 Broker -> Producer: 回查状态
-Producer -> Broker: 返回本地事务执行结果
+Producer -> Broker: 根据本地事务执行状态发送commit/rollback
 
 Broker -> Consumer: 消费消息
 @enduml
