@@ -31,10 +31,12 @@ redo log可以理解为一个环形结构，write pos标识下一个可写入的
 check point到write pos之间的数据是需要刷新到磁盘的。redo log是循环的，所以不可能无尽得写入，当write pos重新回到check point时，就需要将数据刷回磁盘后才能写入新数据。
 
 ### redo log格式
-redo log是物理日志，记录了磁盘page块的修改内容
+redo log是物理日志，记录了磁盘page块的修改内容。但是redo log没有记录磁盘块的全部内容，所以如果要恢复日志，需要将磁盘内容先加载到内存中，在内存中引用redo log的改动才能刷回磁盘。
+也就是说不能单靠redo log恢复数据。
 
 ### redo log buffer与刷盘策略
-redo log本身也有内存buffer，是为了进一步提升写入性能的。控制redo log刷盘的参数是innodb_flush_log_at_trx_commit。该值有3种值：
+redo log本身也有内存buffer，是为了进一步提升写入性能的。因为一个事务可能不仅一条语句，commit前可以将本事务内的所有写入先记录到buffer中防止，commit时一并写入。
+控制redo log刷盘的参数是innodb_flush_log_at_trx_commit。该值有3种值：
 - 0：每次写入操作仅仅是写入redo log的内存buffer，每秒定时将buffer数据fsync到磁盘中。如果mysql或者os crash会丢失1s内的数据；
 - 1：每次写入操作fsync到磁盘中，不会丢数据，可靠性最高，但是性能较低；
 - 2：每次写入os的cache中，每秒定时fsync到磁盘中，如果os crash，会丢失1s数据，mysql crash不影响，是一种兼顾可靠性与性能的折中方案；
@@ -49,6 +51,7 @@ redo log本身也有内存buffer，是为了进一步提升写入性能的。控
 
 有了redo log为什么还需要binlog？因为redo log是innodb存储引擎层的日志，换言之其他存储引擎是没有redo log的。但是主从同步是server层的需求，需要有一种独立于存储引擎的日志，
 这就是需要binlog日志的原因。
+那binlog能否代替redo log？不能，binlog是逻辑日志，使用binlog无法恢复磁盘数据。
 
 ### 二者的区别
 - redo log是innodb引擎特有的，binlog是server层日志
