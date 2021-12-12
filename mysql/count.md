@@ -9,3 +9,6 @@
 对于count(字段)，需要遍历数据行取出列值判断是不是为空，如果不为空计数+1。
 对于count(*)，mysql有优化，只遍历计数不取值，所以效率更高，和count(1)差不多。
 统计行数，直接用count(*)即可。
+
+## 参考
+- [14 | count(*)这么慢，我该怎么办？](https://time.geekbang.org/column/article/72775)
