@@ -35,7 +35,7 @@ redo log是物理日志，记录了磁盘page块的修改内容。但是redo log
 也就是说不能单靠redo log恢复数据。
 
 ### redo log buffer与刷盘策略
-redo log本身也有内存buffer，是为了进一步提升写入性能的。因为一个事务可能不仅一条语句，commit前可以将本事务内的所有写入先记录到buffer中防止，commit时一并写入。
+redo log本身也有内存buffer，是为了进一步提升写入性能的。因为一个事务可能不仅一条语句，commit前可以将本事务内的所有写入先记录到buffer中，commit时一并写入。
 控制redo log刷盘的参数是innodb_flush_log_at_trx_commit。该值有3种值：
 - 0：每次写入操作仅仅是写入redo log的内存buffer，每秒定时将buffer数据fsync到磁盘中。如果mysql或者os crash会丢失1s内的数据；
 - 1：每次写入操作fsync到磁盘中，不会丢数据，可靠性最高，但是性能较低；
