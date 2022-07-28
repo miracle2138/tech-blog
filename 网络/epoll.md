@@ -62,5 +62,14 @@ int epoll_wait (int __epfd, struct epoll_event *__events, int __maxevents, int _
 ### 优势
 可以看到，epoll将事件注册以及事件的就绪查看解耦，拆分成两个接口。在注册部分将fd以及感兴趣的事件告诉epoll，属于低频部分。在高频的wait操作中就不需要再传递这些信息了。
 
+### ET和LT
+- ET（Edge Trigger）模式，指的是如果一个socket就绪，epoll_wait只会触发一次，不管这些数据是分几次读取的；
+- LT（Level Trigger）模式，指的是如果一个socket就绪，只要有数据，epoll_wait就会一直触发。
+
+举个例子，比如一份数据分成5个数据包过来。
+如果是ET模式，只会在一次epoll_wait中返回就绪。如果这次处理只读了两个数据包就报错了，那么后续的数据包就不会再触发了，意味着可能丢数据。
+如果是LT模式，即使这次epoll_wait的逻辑报错没有读到全部的数据包，下一次调用epoll_wait仍然会返回就绪，可以继续读取。
+所以ET模式效率更高，不会重复触发，但是容错率较低，一旦发生bug可能数据丢失。而LT模式容错更高，但牺牲了一定的效率。
+
 ## 参考
 - [IO多路复用（一）-- Select、Poll、Epoll](https://segmentfault.com/a/1190000016400053)
