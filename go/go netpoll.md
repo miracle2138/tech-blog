@@ -62,16 +62,14 @@ func HandleConn(conn net.Conn) {
 }
 ```
 但是在实现层，`connection per thread`模式因为线程调度和阻塞式IO都是os层面的机制，不需要用户态过多关注细节。
-但是对于go的`connection per goroutine`而言，goroutine是用户态实现的，数据包就绪与否是内核态实现的，如何做到二者的无缝相连？
-更近一步说，需要实现：
-- 协程里的IO阻塞（上述例子的Read和Write）时，即没有数据包或者不可写时，G可以被挂起
-- 协程里的IO就绪时，即有数据包或者可写时，G可以被恢复执行
+但是对于go的`connection per goroutine`而言，goroutine是用户态实现的，数据包就绪与否是内核态实现的，一旦数据就绪怎么通知挂起的goroutine恢复执行呢？？？
 
-go在实现时，底层网络借助了多路复用的模式。并且：
-- 首先，**go的网络IO调用（accept、read、write、select）均是非阻塞的**，否则一旦陷入阻塞，啥也做了。
-- 其次，**go会在调度goroutine时候执行epoll_wait系统调用，即`runtime.netpoll`**，检查是否有状态发生改变的fd，有的话就把他取出，唤醒对应的goroutine去处理
+核心机制：
+- 网络模式epoll：go在实现时，底层网络借助了**多路复用**的模式，如epoll
+- G挂起：**go的网络IO调用（accept、read、write、select）均是非阻塞的**，否则一旦陷入阻塞，没法把G和con关联起来
+- G唤醒：**go会在调度goroutine时候执行epoll_wait系统调用，即`runtime.netpoll`**，检查是否有状态发生改变的fd，有的话就把他取出，唤醒对应的goroutine去处理
 
-展开来看
+展开来看：
 - accept：负责监听端口并创建连接。一旦有连接，就会创建一个G取处理。如果没有则park住。
 - read：执行在子G上。go对read做了封装，首先调用了系统的非阻塞的read方法，如果没有数据则会将当前的G park住，同时将G和con绑定。具体逻辑在`netpollblock`
 - write：执行在子G上。与read的逻辑基本一样
